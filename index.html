@@ -1,4 +1,4 @@
-<html>
+//<html>
 
 <head>
   <meta charset="utf-8">
@@ -27,7 +27,7 @@
 			var printServiceUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
 			var identifyTaskUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/BoundaryData/MapServer/identify";
 			
-			var getAsmtMapUrl = "https://pdo12dev.jacksoncounty.org/at_virtual/PDF/";
+			var getAsmtMapUrl = "https://web.jacksoncounty.org/at_virtual/PDF/";
 			var getAsmtMapSuffix = ".pdf";
 			
 			var getGoogleMapUrl = "https://www.google.com/maps/@";
@@ -42,6 +42,9 @@
 			var getZillowUrl = "https://www.zillow.com/homes/";
 			var getZillowSuffix = "_rb";
 			var getZillowState = ",-OR,";
+    
+      // This can be set to "" for PDO embeded code
+      var baseUrl = "https://web.jacksoncounty.org/pdo/";
 		// URLs--------------------------------------
 
 	    var queryFeatureLayerAccount;
@@ -329,12 +332,18 @@
 					// Account Info -----------------
 					// Asmt & Plan Details button ---
 					content += "<hr />";
-					var jsAcct = "javascript:loadTextFrameAcct('" + attributes.ACCOUNT + "');"
-					content += "" + "<a href='javascript:void();' onmousedown=" + jsAcct + "> Assessment &amp; Planning Details</a>";			
+					// var jsAcct = "javascript:loadTextFrameAcct('" + attributes.ACCOUNT + "');"
+          var jsAcct = loadTextFrameAcct(attributes.ACCOUNT);
+					//content += "" + "<a href='javascript:void();' onmousedown=" + jsAcct + "> Assessment &amp; Planning Details</a>";
+          content += "" + "<a target='_blank' href='" + jsAcct + "'> Assessment &amp; Planning Details</a>";
+          // Asmt & Plan Details button ---
 					// Account Details button -------
 					var details = 'Ora_asmt_details.cfm?account=' + attributes.ACCOUNT;
-					content += "<br />" + "<a target='_blank' href='" +
-					details + "'> Account Details</a>";
+          // NO PDO!
+          details = baseUrl + details;
+          content += "<br />" + "<a target='_blank' href=" +	details + "> Account Details</a>";
+          // NO PDO!
+					// content += "<br />" + "<a target='_blank' href='" +	details + "'> Account Details</a>";
 					// Account Details button -------	
 					// Assessor Map button ----------
 					content += "<br />" + "<a target='_blank' href='" +
@@ -577,15 +586,21 @@
 				+ map + "&DisplayValue=" + taxlot;
 			// PDO
       //txtFrm.document.location = url.trim();
+      // NO PDO
+      //window.open(baseUrl + url.trim()); 
 		}
 		function loadTextFrameAcct(account){
 			var url = "Ora_account.cfm?account=" + account;
       // PDO
 			//txtFrm.document.location = url.trim();
+      // NO PDO
+      return baseUrl + url.trim() 
 		}
 		function loadTextFrameUrl(url){
       // PDO
 			//txtFrm.document.location = url;
+      // NO PDO
+      //window.open(baseUrl + url.trim()); 
 		}
 		// Functions outside require --------------------
     
