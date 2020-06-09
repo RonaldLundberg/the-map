@@ -1,4 +1,4 @@
-//<html>
+<html>
 
 <head>
   <meta charset="utf-8">
@@ -9,10 +9,16 @@
     body,
     #viewDiv {
       padding: 0;
-      margin: 0;
+      /* margin: 0;*/
+	  margin: 0 250px 0 0; 
       height: 100%;
-      width: 100%;
+      width:  960px; /*100%;*/
     }
+	#sidebar {
+		float: right;
+		width: 200px;
+		padding: 15px 10px;
+	}
   </style>
 
   <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/css/main.css">
@@ -608,6 +614,7 @@
 </head>
 
 <body>
+  <span id="sidebar">Testing</span>
   <div id="viewDiv"></div>
 </body>
 
