@@ -1,5 +1,6 @@
 # the-map
 Mapping application using ArcGIS API for JavaScript
 
-https://ronaldlundberg.github.io/the-map/
-https://ronaldlundberg.github.io/the-map/sidebar.html
+<a href="https://ronaldlundberg.github.io/the-map/" target="_blank">https://ronaldlundberg.github.io/the-map/</a>
+<a href="https://ronaldlundberg.github.io/the-map/sidebar.html" target="_blank">https://ronaldlundberg.github.io/the-map/sidebar.html</a>
+
