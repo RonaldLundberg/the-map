@@ -37,9 +37,10 @@
     }
   </style>
 
-  <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/css/main.css">
-  <script src="https://js.arcgis.com/4.15/"></script>
-  <script src="https://kit.fontawesome.com/fc0f248fa2.js" crossorigin="anonymous"></script>
+	
+<link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/css/main.css">			
+<!-- !! 4.15 will break the link using "javascript:" in function getTaxlotInfo(graphic) !! -->
+<script src="https://js.arcgis.com/4.15/"></script>
   <script>
 
 		// URLs--------------------------------------
@@ -733,13 +734,11 @@
 							actions: [
 							{
 								id: popupIdShare,
-								title: "Share this map view." ,
-								className: "fas fa-share-square"
+								title: "Share this map view." 
 							},
 							{
 								id: popupIdScreenShot,
-								title: "ScreenShot this map view." ,
-								className: "far fa-image"
+								title: "ScreenShot this map view." 
 							}  
 							]
 						};
