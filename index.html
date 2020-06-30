@@ -37,8 +37,10 @@
     }
   </style>
 
-  <link rel="stylesheet" href="javascript\4.13\main.css">
-  <script src="javascript\4.13\dojo.js"></script>
+	
+<link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/css/main.css">			
+<!-- !! 4.15 will break the link using "javascript:" in function getTaxlotInfo(graphic) !! -->
+<script src="https://js.arcgis.com/4.15/"></script>
   <script>
 
 		// URLs--------------------------------------
@@ -732,13 +734,11 @@
 							actions: [
 							{
 								id: popupIdShare,
-								title: "Share this map view." ,
-								className: ""
+								title: "Share this map view." 
 							},
 							{
 								id: popupIdScreenShot,
-								title: "ScreenShot this map view." ,
-								className: ""
+								title: "ScreenShot this map view." 
 							}  
 							]
 						};
