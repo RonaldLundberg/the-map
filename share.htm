@@ -1,0 +1,42 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <div>
+            Use the text below to share the map view.    
+        </div>
+        <br />
+        <div id="shareUrl"></div>
+        <br />
+        <button onclick="myFunction()">Copy text</button> (May not work ia all browsers)
+        <input type="text"  id="shareTxt" style="display:none;" />
+    </body>
+    <script>
+        const urlParams = new URLSearchParams(window.parent.location.search);
+        const mapParam = urlParams.get('map');
+        const taxlotParam = urlParams.get('taxlot');
+        console.log(mapParam);
+        if(mapParam && taxlotParam){
+            // mapParam, taxlotParam
+            var urlShare = location.origin + location.pathname.replace("/share.htm", "");
+            urlShare += "?map=" +  mapParam + "&taxlot=" + taxlotParam;
+            document.getElementById("shareUrl").innerHTML = "<a href='" + urlShare + "'>" + urlShare + "</a>";
+            document.getElementById("shareTxt").value = urlShare;
+        }
+        function myFunction() {
+            /* Get the text field */
+            var copyText = document.getElementById("shareTxt");
+    
+            /* Select the text field */
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+    
+            /* Copy the text inside the text field */
+            document.execCommand("copy");
+    
+            /* Alert the copied text */
+            alert("Copied the text: " + copyText.value);
+        }
+    </script>
+</html>

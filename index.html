@@ -51,6 +51,9 @@
 			var printServiceUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
 			var identifyTaskUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/BoundaryData/MapServer/identify";
 			
+			var imageryLayerUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer";
+			var imageryLayerthumbnailUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer/info/thumbnail";
+
 			var getAsmtMapUrl = "https://web.jacksoncounty.org/at_virtual/PDF/";
 			var getAsmtMapSuffix = ".pdf";
 			
@@ -221,17 +224,18 @@
 			// Taxlot Label Points ------------------     
       
 			// Basmap -------------------------------
-			var basemap = new Basemap({
+			var basemap = 
+			new Basemap({
 				baseLayers: [
 				new ImageryLayer({
-					url: "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer",
+					url: imageryLayerUrl,
 					title: "Basemap",
 					copyright: "State of Oregon GEO"
 				})
 				],
 				title: "DOQ 2018",
 				id: "basemap",
-				thumbnailUrl: "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer/info/thumbnail"        
+				thumbnailUrl: imageryLayerthumbnailUrl        
 			});
 			// Basmap -------------------------------
       
@@ -657,7 +661,7 @@
 					// console.log("event.action.id = " + event.action.id);
 					// console.log("location.origin + location.pathname = " + location.origin + location.pathname.replace("/MapFrame.cfm", ""));
 					if (event.action.id === popupIdShare) {
-						var urlShare = location.origin + location.pathname.replace("/MapFrame.cfm", "") + "/share.htm";
+						var urlShare = location.origin + location.pathname.replace("/index.html", "") + "/share.htm";
 						var attributes = view.popup.viewModel.selectedFeature.attributes;
 						urlShare += "?map=" +  attributes.MAPNUM + "&taxlot=" + attributes.TAXLOT 
 						// console.log("attributes.TAXLOT = " + attributes.TAXLOT);						
