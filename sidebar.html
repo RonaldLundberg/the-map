@@ -59,7 +59,8 @@
           const mapParam = urlParams.get('map');
           const taxlotParam = urlParams.get('taxlot');
           var popupIdShare = "share";
-      
+          var expandGroupId = "allExpands"; 
+
           // Start of initial require func ------------
           require([
               "esri/widgets/BasemapToggle",
@@ -198,7 +199,8 @@
                   view: view,
                   content: bookmarks,
                   expanded: false,
-                  expandTooltip: "Bookmarks"
+                  expandTooltip: "Bookmarks",
+				  group: expandGroupId
               });
               // Add the widget to the top-right corner of the view
               view.ui.add(bkExpand, "top-left");  
@@ -252,7 +254,8 @@
                   view: view,
                   content: print,
                   expanded: false,
-                  expandTooltip: "Print Map"
+                  expandTooltip: "Print Map",
+				  group: expandGroupId
               }); 		
               view.ui.add(bkExpandPr, {
                   position: "top-left"
@@ -267,7 +270,8 @@
                   view: view,
                   content: layerList,
                   expanded: false,
-                  expandTooltip: "Layers"	
+                  expandTooltip: "Layers",
+				  group: expandGroupId
               });
               view.ui.add(llExpand, "top-right");	  
               // Layer List ---------------------------
