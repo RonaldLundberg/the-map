@@ -48,7 +48,7 @@
 			var featureLayerUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/ReferenceData/MapServer/3";
 			var featureLayerCountyUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/BoundaryData/MapServer/3";
 			var featureLayerSiteAddressUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/ReferenceData/MapServer/1";
-			var printServiceUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
+			var printServiceUrl = "https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
 			var identifyTaskUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/BoundaryData/MapServer/identify";
 			
 			var imageryLayerUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer";
@@ -81,11 +81,11 @@
     // PDO
     //const urlParams = new URLSearchParams(window.parent.location.search);
 		// codepen
-    const urlParams = new URLSearchParams(window.location.search);
+    	const urlParams = new URLSearchParams(window.location.search);
 		const mapParam = urlParams.get('map');
 		const taxlotParam = urlParams.get('taxlot');
 		var popupIdShare = "share";
-    var popupIdScreenShot = "screenShot";
+    	var popupIdScreenShot = "screenShot";
     
 		// Start of initial require func ------------
 		require([
