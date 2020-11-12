@@ -1,0 +1,225 @@
+
+
+<html>
+
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+      <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+      <title>ArcGIS JavaScript Tutorials: ArcIMS Replacement</title>
+      <style>
+        html,
+        body,
+        #viewDiv {
+          padding: 0;
+          margin: 0;
+          height: 100%;
+          width: 100%;
+        }
+        .hide {
+          display: none;
+        }
+      </style>
+    
+        
+    <link rel="stylesheet" href="https://js.arcgis.com/4.16/esri/css/main.css">			
+    <!-- !! 4.15 will break the link using "javascript:" in function getTaxlotInfo(graphic) !! -->
+    <script src="https://js.arcgis.com/4.15/"></script>
+      <script>
+    
+            // URLs--------------------------------------
+                var featureLayerUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/ReferenceData/MapServer/3";
+            var imageryLayerUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer";
+                var imageryLayerthumbnailUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer/info/thumbnail";
+    
+          // This can be set to "" for PDO embeded code
+         // var baseUrl = "https://web.jacksoncounty.org/pdo/";
+            // URLs--------------------------------------
+    
+            var queryFeatureLayerAccount;
+          // PDO
+              //var txtFrm; // parent.TextFrame;
+            let view;
+        // PDO
+        //const urlParams = new URLSearchParams(window.parent.location.search);
+            // codepen
+            const urlParams = new URLSearchParams(window.location.search);
+            const mapParam = urlParams.get('map');
+            const taxlotParam = urlParams.get('taxlot');
+    
+            // Start of initial require func ------------
+            require([
+          "esri/widgets/BasemapToggle",
+          "esri/Basemap",
+                "esri/layers/FeatureLayer",
+                "esri/Graphic",
+                "esri/layers/GraphicsLayer",
+          "esri/layers/ImageryLayer",
+                "esri/Map",
+                "esri/views/MapView",
+                "esri/tasks/support/Query"
+            ], function(
+          BasemapToggle,
+          Basemap,
+                FeatureLayer, 
+                Graphic, 
+                GraphicsLayer,
+          ImageryLayer,
+                Map,
+                MapView,
+          Query
+            ){
+                var map = new Map({
+                    basemap: "topo"
+                });
+                view = new MapView({
+                    container: "viewDiv",
+                    map: map,
+                    center: [-122.77283593913208,  42.42851829152143],
+                    zoom: 9
+                });
+        
+                view.constraints = {
+                    //minScale: 500000,  // User cannot zoom out beyond a scale of 1:500,000
+                    maxScale: 1000,  
+                    rotationEnabled: true  
+                };
+    
+                // Reference the feature layer to query
+                var featureLayer = new FeatureLayer({
+                    spatialReference: 2270 ,
+                    url: featureLayerUrl,		
+                    popupTemplate: {
+                        outFields: ["*"]
+                    },
+            popupEnabled: false
+                    
+                });
+          
+                // Basmap -------------------------------
+                var basemap = 
+                new Basemap({
+                    baseLayers: [
+                    new ImageryLayer({
+                        url: imageryLayerUrl,
+                        title: "Basemap",
+                        copyright: "State of Oregon GEO"
+                    })
+                    ],
+                    title: "DOQ 2018",
+                    id: "basemap",
+                    thumbnailUrl: imageryLayerthumbnailUrl        
+                });
+                // Basmap -------------------------------
+          
+          // Basemap Toggle --------------------------
+                var basemapToggle = new BasemapToggle({
+                    view: view,
+                    nextBasemap: basemap,
+                    //titleVisible: true         
+                });
+          basemapToggle.visibleElements.title = true;
+                view.ui.add(basemapToggle, "bottom-left");
+                // Basemap Toggle --------------------------
+          
+                // Layer used to draw graphics returned--
+                var graphicsLayer = new GraphicsLayer();
+                graphicsLayer.title = "Selection Graphics";
+                graphicsLayer.listMode = "hide";
+                map.add(graphicsLayer);
+                function addGraphics(result){
+                    graphicsLayer.removeAll();
+            var simpleFillSymbol = {
+             type: "simple-fill",
+             color: [170, 228, 255, 0.5],  
+             outline: {
+               color: [170, 228, 227],
+               width: 1
+             }
+            };
+                    result.features.forEach(function(feature) {
+                        var g = new Graphic({
+                        geometry: feature.geometry,
+                        attributes: feature.attributes,
+                        symbol: {
+                            type: "simple-fill",
+                            color: [50,100,255,.5],
+                            outline: {
+                            width: 2,
+                            color: [125, 125, 255],
+                            },
+                            size: "20px"
+                        },
+                        });
+                        graphicsLayer.add(g);
+                    });
+                }
+                // Layer used to draw graphics returned--
+    
+                // Utility functions --------------------		
+                queryFeatureLayerAccount = function(mapnum, taxlot) {        
+                    var sqlExpression = " MAPNUM = '"+ mapnum + "' AND TAXLOT = '" +  taxlot + "'";
+                    const query = new Query();
+                    query.where = sqlExpression;
+                    query.returnGeometry = true;
+                    query.outSpatialReference = view.spatialReference;
+                    // Queries for the count of all features matching the layer's configurations
+                    // e.g. definitionExpression
+                    featureLayer.queryFeatureCount(query).then(function(numFeatures){
+                        // prints the total count to the console
+                        //console.log(numFeatures);
+                    });
+                    featureLayer.queryFeatures(query).then(function(result) {
+              
+                        addGraphics(result, true);console.log(result);
+                        var selLocation = result.features[0].geometry;
+                        view.goTo(selLocation).then(function() {        
+                        }).catch(function(error) {
+                        console.error("query failed: ", error);
+                        });      
+                    });
+                }
+                // Utility functions --------------------
+                    
+                view.when(function() {
+            // Taxlots ----------------------------
+                    featureLayer.minScale = 30000;
+            featureLayer.title = "Taxlots";
+                    map.add(featureLayer, 0);
+            // Taxlots ----------------------------
+            map.add(graphicsLayer);        
+                    // console.log("window.parent.location.search: "+ window.parent.location.search);
+                    // console.log("mapParam: " + mapParam + " taxlotParam: "  + taxlotParam);
+                    if(mapParam && taxlotParam){
+                        queryFeatureLayerAccount(mapParam, taxlotParam);
+                        //loadTextFrame(mapParam, taxlotParam)
+                    }
+                    var popup = view.popup;
+                    popup.viewModel.on("trigger-action", function(event) {
+                    });
+                });
+    
+                // View click event ---------------------
+                view.on("click", function(event){
+                    graphicsLayer.removeAll();
+                    // event is the event handle returned after the event fires.
+                    // console.log(event.mapPoint);
+                });
+                // View click event ---------------------
+          
+            }); // End of initial require func --------------
+        
+        // Functions outside require --------------------
+            
+            // Functions outside require --------------------
+        
+      </script>
+    </head>
+    
+    <body>
+      <div id="viewDiv"></div>
+      </br> </br> </br> </br>
+      <div onclick="queryFeatureLayerAccount('351W28', '1300')">Here</div>
+    </body>
+    
+    </html>
