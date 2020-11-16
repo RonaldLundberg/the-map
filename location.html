@@ -25,7 +25,6 @@
       rel="stylesheet"
       href="https://js.arcgis.com/4.16/esri/css/main.css"
     />
-    <!-- !! 4.15 will break the link using "javascript:" in function getTaxlotInfo(graphic) !! -->
     <script src="https://js.arcgis.com/4.15/"></script>
     <script>
       // URLs--------------------------------------
@@ -40,7 +39,6 @@
       var queryFeatureLayerAccount;
       let view;
       //const urlParams = new URLSearchParams(window.parent.location.search);
-      // codepen
       const urlParams = new URLSearchParams(window.location.search);
       const mapParam = urlParams.get("map");
       const taxlotParam = urlParams.get("taxlot");
@@ -187,11 +185,8 @@
           map.add(featureLayer, 0);
           // Taxlots ----------------------------
           map.add(graphicsLayer);
-          // console.log("window.parent.location.search: "+ window.parent.location.search);
-          // console.log("mapParam: " + mapParam + " taxlotParam: "  + taxlotParam);
           if (mapParam && taxlotParam) {
             queryFeatureLayerAccount(mapParam, taxlotParam);
-            //loadTextFrame(mapParam, taxlotParam)
           }
           var popup = view.popup;
           popup.viewModel.on("trigger-action", function (event) {});
