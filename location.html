@@ -38,7 +38,6 @@
 
       var queryFeatureLayerAccount;
       let view;
-      //const urlParams = new URLSearchParams(window.parent.location.search);
       const urlParams = new URLSearchParams(window.location.search);
       const mapParam = urlParams.get("map");
       const taxlotParam = urlParams.get("taxlot");
@@ -76,7 +75,6 @@
         });
 
         view.constraints = {
-          //minScale: 500000,  // User cannot zoom out beyond a scale of 1:500,000
           maxScale: 1000,
           rotationEnabled: true,
         };
@@ -110,7 +108,6 @@
         var basemapToggle = new BasemapToggle({
           view: view,
           nextBasemap: basemap,
-          //titleVisible: true
         });
         basemapToggle.visibleElements.title = true;
         view.ui.add(basemapToggle, "bottom-left");
@@ -158,12 +155,6 @@
           query.where = sqlExpression;
           query.returnGeometry = true;
           query.outSpatialReference = view.spatialReference;
-          // Queries for the count of all features matching the layer's configurations
-          // e.g. definitionExpression
-          featureLayer.queryFeatureCount(query).then(function (numFeatures) {
-            // prints the total count to the console
-            //console.log(numFeatures);
-          });
           featureLayer.queryFeatures(query).then(function (result) {
             addGraphics(result, true);
             console.log(result);
