@@ -1,0 +1,922 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <title>ArcGIS JavaScript Tutorials: ArcIMS Replacement</title>
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #screenshotDiv {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+    .hide {
+      display: none;
+    }
+    img {
+      border: 10px solid white;
+      box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.5);
+    }
+    .js-screenshot-image{
+      border: 2px solid;
+    }
+    #screenshotDiv > * {
+      margin: 0.5em;
+    }
+  </style>
+
+	
+<link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/css/main.css">			
+<!-- !! 4.15 will break the link using "javascript:" in function getTaxlotInfo(graphic) !! -->
+<script src="https://js.arcgis.com/4.15/"></script>
+  <script>
+
+		// URLs--------------------------------------
+			var featureLayerUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/ReferenceData/MapServer/3";
+			var featureLayerCountyUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/BoundaryData/MapServer/3";
+			var featureLayerSiteAddressUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/ReferenceData/MapServer/1";
+			var printServiceUrl = "https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
+			var identifyTaskUrl = "https://spatial.jacksoncounty.org/arcgis/rest/services/OpenData/BoundaryData/MapServer/identify";
+			
+			var imageryLayerUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer";
+			var imageryLayerthumbnailUrl = "https://imagery.oregonexplorer.info/arcgis/rest/services/OSIP_2018/OSIP_2018_WM/ImageServer/info/thumbnail";
+
+			var getAsmtMapUrl = "https://web.jacksoncounty.org/at_virtual/PDF/";
+			var getAsmtMapSuffix = ".pdf";
+			
+			var getGoogleMapUrl = "https://www.google.com/maps/@";
+			var getGoogleMapSuffix = "/data=!3m1!1e3";
+			var getGoogleMapZoom = "17z";
+
+			var getBingMapUrl = "https://www.bing.com/maps/?v=2&cp=";
+			var getBingMapSuffix = "&style=b";
+			var getBingMapZoom = "&lvl=17";
+			var getBingMapWhere = "&Where1=";
+
+			var getZillowUrl = "https://www.zillow.com/homes/";
+			var getZillowSuffix = "_rb";
+			var getZillowState = ",-OR,";
+    
+      // This can be set to "" for PDO embeded code
+      var baseUrl = "https://web.jacksoncounty.org/pdo/";
+		// URLs--------------------------------------
+
+	    var queryFeatureLayerAccount;
+      // PDO
+	  	var txtFrm; // parent.TextFrame;
+		let view;
+    // PDO
+    //const urlParams = new URLSearchParams(window.parent.location.search);
+		// codepen
+    	const urlParams = new URLSearchParams(window.location.search);
+		const mapParam = urlParams.get('map');
+		const taxlotParam = urlParams.get('taxlot');
+		var popupIdShare = "share";
+    	var popupIdScreenShot = "screenShot";
+		var expandGroupId = "allExpands"; 
+
+		// Start of initial require func ------------
+		require([
+			"esri/widgets/BasemapToggle",
+      "esri/Basemap",
+			"esri/webmap/Bookmark",
+			"esri/widgets/Bookmarks",
+			"esri/widgets/Compass",
+			"esri/widgets/CoordinateConversion",
+			"esri/widgets/CoordinateConversion/CoordinateConversionViewModel",
+			"esri/widgets/Expand",
+			"esri/layers/FeatureLayer",
+			"esri/Graphic",
+			"esri/layers/GraphicsLayer",
+      "esri/layers/ImageryLayer",
+			"esri/widgets/Home",
+			"esri/tasks/IdentifyTask",
+			"esri/tasks/support/IdentifyParameters",
+			"esri/layers/support/LabelClass",
+			"esri/widgets/LayerList",
+			"esri/widgets/Locate",
+			"esri/Map",
+			"esri/views/MapView",
+			"esri/widgets/Print",
+			"esri/tasks/support/Query",
+			"esri/widgets/ScaleBar",
+      "esri/widgets/Search",
+			"esri/geometry/SpatialReference"
+		], function(
+			BasemapToggle,
+      Basemap,
+			Bookmark, 
+			Bookmarks, 
+			Compass, 
+			CoordinateConversion, 
+			CoordinateVM, 
+			Expand, 
+			FeatureLayer, 
+			Graphic, 
+			GraphicsLayer,
+      ImageryLayer,
+			Home, 
+			IdentifyTask,
+			IdentifyParameters,
+			LabelClass,
+			LayerList, 
+			Locate, 
+			Map,
+			MapView,
+			Print, 
+			Query,
+			ScaleBar,
+      Search,
+			SpatialReference
+		){
+			var map = new Map({
+				basemap: "topo"
+			});
+			view = new MapView({
+				container: "viewDiv",
+				map: map,
+				center: [-122.77283593913208,  42.42851829152143],
+				zoom: 9
+			});
+	
+			view.constraints = {
+				//minScale: 500000,  // User cannot zoom out beyond a scale of 1:500,000
+				maxScale: 1000,  
+				rotationEnabled: true  
+			};
+
+			// Reference the feature layer to query
+			var featureLayer = new FeatureLayer({
+				spatialReference: 2270 ,
+				url: featureLayerUrl,		
+				popupTemplate: {
+					outFields: ["*"]
+				}
+				
+			});
+			
+			// County Outline Layer -----------------
+			var featureLayerCounty = new FeatureLayer({
+				url: featureLayerCountyUrl
+			});
+			// County Outline Layer -----------------
+			
+			// Site Address Points ------------------     
+			var featureLayerSiteAddress = new FeatureLayer({
+				url: featureLayerSiteAddressUrl
+				});
+				const siteLabelClass = new LabelClass({
+				labelExpression: "[FULLADDR]",
+				symbol: {
+				type: "text",  // autocasts as new TextSymbol()
+				color: "black",
+				haloSize: 1,
+				haloColor: "white",
+				font: {  // autocasts as new Font()
+					size: 6,
+					family: "sans-serif",
+					weight: "normal"
+				},
+				angle: 0
+				},
+				maxScale: 0,
+				minScale: 5000,
+				labelPlacement: "above-center"
+			});
+			featureLayerSiteAddress.labelingInfo = [ siteLabelClass ];
+			// Site Address Points ------------------
+			
+      // Taxlot Label Points ------------------     
+			var featureLayerTaxlotLbl = new FeatureLayer({
+				url: featureLayerUrl
+				});
+				const taxlotLabelClass = new LabelClass({
+				labelExpression: '[MAPNUM] [TAXLOT]',
+				symbol: {
+				type: "text",  // autocasts as new TextSymbol()
+				color: "black",
+				haloSize: 1,
+				haloColor: "white",
+				font: {  // autocasts as new Font()
+					size: 6,
+					family: "sans-serif",
+					weight: "normal"
+				},
+				angle: 0
+				},
+				maxScale: 0,
+				minScale: 5000,
+				labelPlacement: "above-center"
+			});
+			featureLayerTaxlotLbl.labelingInfo = [ taxlotLabelClass ];
+			// Taxlot Label Points ------------------     
+      
+			// Basmap -------------------------------
+			var basemap = 
+			new Basemap({
+				baseLayers: [
+				new ImageryLayer({
+					url: imageryLayerUrl,
+					title: "Basemap",
+					copyright: "State of Oregon GEO"
+				})
+				],
+				title: "DOQ 2018",
+				id: "basemap",
+				thumbnailUrl: imageryLayerthumbnailUrl        
+			});
+			// Basmap -------------------------------
+      
+      
+			// Bookmark Widget ----------------------
+      
+			const bookmarks = new Bookmarks({
+				view: view,
+				bookmarks: [
+					new Bookmark({extent: { xmin:-13662751.1917, ymin: 5193066.7558, xmax: -13653795.0279, ymax: 5185989.1375, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Ashland"}),
+
+					new Bookmark({extent: { xmin:-13685146.226, ymin: 5219742.4395, xmax: -13679664.387, ymax: 5213237.9945, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Central Point"}),
+								
+					new Bookmark({extent: { xmin:-13671994.1538, ymin: 5234114.3315, xmax: -13668369.3548, ymax: 5229391.5096, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Eagle Point"}),
+								
+					new Bookmark({extent: { xmin:-13699942.1472, ymin: 5226731.5598, xmax: -13696584.5779 , ymax: 5224802.7434, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Gold Hill"}),
+
+					new Bookmark({extent: { xmin:-13692593.189, ymin: 5211046.492, xmax: -13684932.114, ymax: 5206156.260, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Jacksonville"}),
+
+					new Bookmark({extent: { xmin:-13681407.8465, ymin: 5215165.8583, xmax: -13670008.3037, ymax: 5205979.168, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Medford"}),
+								
+					new Bookmark({extent: { xmin:-13673864.6876, ymin: 5203368.6601, xmax: -13670139.3468, ymax: 5200669.9047, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Phoenix"}),
+						
+					new Bookmark({extent: { xmin:-13712364.3595, ymin: 5227811.062, xmax: -13709752.9168, ymax: 5225604.4325, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Rogue River"}),
+
+					new Bookmark({extent: { xmin:-13675854.4323, ymin: 5258019.263, xmax: -13668274.1047, ymax: 5250359.5602, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Shady Cove"}),
+								
+					new Bookmark({extent: { xmin:-13669959.4298, ymin: 5198701.4008, xmax: -13665768.4214, ymax: 5195388.8108, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Talent"}),
+							
+					new Bookmark({extent: { xmin:-13675650.7027, ymin: 5227207.8108, xmax: -13671808.9451, ymax: 5224509.0554, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "White City"}),
+          
+          new Bookmark({extent: { xmin: -13713460.3827, ymin: 5170800.8475, xmax: -13701024.9411, ymax: 5161090.6197, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Applegate Lake"}),
+
+          new Bookmark({extent: { xmin: -13662563.1576, ymin: 5232643.6534, xmax: -13658419.7743, ymax: 5229690.8975, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Brownsboro"}),
+
+          new Bookmark({extent: { xmin: -13646001.3768, ymin: 5243764.5607, xmax: -13642765.6123, ymax: 5241542.991, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Butte Falls"}),
+
+          new Bookmark({extent: { xmin: -13652740.2824, ymin: 5186204.6554, xmax: -13642686.0956, ymax: 5179682.6632, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Emigrant Lake"}),
+
+          new Bookmark({extent: { xmin: -13637904.2803, ymin: 5200526.0724, xmax: -13618960.0758, ymax: 5185984.5433, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Hyatt-Howard Prairie"}),
+
+          new Bookmark({extent: { xmin: -13654006.5155, ymin: 5227976.3941, xmax: -13646672.2508, ymax: 5222229.6326, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Lake Creek"}),
+
+          new Bookmark({extent: { xmin: -13657838.8488, ymin: 5271584.0871, xmax: -13638578.7639, ymax: 5259548.0192, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Lost Creek Lake"}),
+
+          new Bookmark({extent: { xmin: -13637788.878, ymin: 5276279.8235, xmax: -13630894.3393, ymax: 5272010.0397, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Prospect"}),
+          
+          new Bookmark({extent: { xmin: -13718713.738, ymin: 5205056.992, xmax: -13715646.703, ymax: 5202534.570, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Provolt"}),  
+
+          new Bookmark({extent: { xmin: -13632434.6531, ymin: 5299696.4205, xmax: -13628905.7659, ymax: 5297010.8943, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Union Creek"}),
+
+          new Bookmark({extent: { xmin: -13633183.7655, ymin: 5233813.1141, xmax: -13628564.1313, ymax: 5230511.1075, spatialReference: { latestWkid: 3857, wkid: 102100   }}, name: "Willow Lake"})
+				]
+			}); 
+			const bkExpand = new Expand({
+				view: view,
+				content: bookmarks,
+				expanded: false,
+				expandTooltip: "Bookmarks",
+				group: expandGroupId
+			});
+			// Add the widget to the top-right corner of the view
+			view.ui.add(bkExpand, "top-left");  
+			// Bookmark Widget ----------------------
+			
+			// Home Widget --------------------------
+			var homeWidget = new Home({
+				view: view
+			});
+			// adds the home widget to the top left corner of the MapView
+			view.ui.add(homeWidget, "top-right");
+			// Home Widget --------------------------
+			
+			// Basemap Toggle --------------------------
+			var basemapToggle = new BasemapToggle({
+				view: view,
+				nextBasemap: basemap,
+				//titleVisible: true         
+			});
+      basemapToggle.visibleElements.title = true;
+			view.ui.add(basemapToggle, "bottom-left");
+			// Basemap Toggle --------------------------
+			
+			// Scalebar Widget ----------------------
+			var scaleBar = new ScaleBar({
+				view: view
+			});
+			// Add widget to the bottom left corner of the view
+			view.ui.add(scaleBar, {
+				position: "bottom-left"
+			});
+			// Scalebar Widget ----------------------
+			
+			// Locate Widget ------------------------
+			var locateWidget = new Locate({
+				view: view,   // Attaches the Locate button to the view
+				graphic: new Graphic({
+				symbol: { type: "simple-marker" }  // overwrites the default symbol used for the
+				// graphic placed at the location of the user when found
+				})
+			});
+			view.ui.add(locateWidget, "top-right");
+			// Locate Widget ------------------------
+			
+			// Print Widget -------------------------
+			var print = new Print({
+				view: view,
+				printServiceUrl: printServiceUrl
+			});
+			const bkExpandPr = new Expand({
+				view: view,
+				content: print,
+				expanded: false,
+				expandTooltip: "Print Map",
+				group: expandGroupId
+			}); 		
+			view.ui.add(bkExpandPr, {
+				position: "top-left"
+			});
+			// Print Widget -------------------------
+			
+			// Layer List ---------------------------
+			var layerList = new LayerList({
+				view: view
+			});
+			const llExpand = new Expand({
+				view: view,
+				content: layerList,
+				expanded: false,
+				expandTooltip: "Layers",
+				group: expandGroupId	
+			});
+			view.ui.add(llExpand, "top-right");	  
+			// Layer List ---------------------------
+			
+			// Coordinate Conversion ----------------
+			var ccWidget = new CoordinateConversion({
+				view: view
+			});
+			const bgCConvert = new Expand({
+				view: view,
+				content: ccWidget,
+				expanded: false,
+				expandTooltip: "Coordinate Conversion"  
+			});
+			view.ui.add(bgCConvert, "bottom-right");
+			// Coordinate Conversion ----------------     
+
+			// Compass Widget --------------------------  
+			var compass = new Compass({
+				view: view
+			});
+			view.ui.add(compass, "top-right");
+			// Compass Widget -----------------------
+
+      // Search Widget ---------------------------
+      var searchWidget = new Search({
+        view: view,
+        allPlaceholder: "Search",
+        sources: [
+          {
+            layer: featureLayer,
+            searchFields: ["MAPLOT","FEEOWNER", "ACCOUNT"],
+            displayField: "MAPLOT",
+            exactMatch: false,
+            outFields: ["*"], //"MAPLOT", "ACCOUNT", "SITEADD", "TAXLOT", "MAPNUM", "MAPNUMBER"],
+            name: "Jackson County",
+            placeholder: "example: 351W281100"  
+          }
+        ]
+      });
+      searchWidget.viewModel.includeDefaultSources = false;
+      // searchWidget.viewModel.popupEnabled = false;
+      
+      view.ui.add(searchWidget, {
+        position: "top-left"
+      });
+      // Search Widget ---------------------------
+      
+			// Layer used to draw graphics returned--
+			var graphicsLayer = new GraphicsLayer();
+			graphicsLayer.title = "Selection Graphics";
+			graphicsLayer.listMode = "hide";
+			map.add(graphicsLayer);
+			function addGraphics(result){
+				graphicsLayer.removeAll();
+        var simpleFillSymbol = {
+         type: "simple-fill",
+         color: [170, 228, 255, 0.5],  
+         outline: {
+           color: [170, 228, 227],
+           width: 1
+         }
+        };
+				result.features.forEach(function(feature) {
+					var g = new Graphic({
+					geometry: feature.geometry,
+					attributes: feature.attributes,
+					symbol: {
+						type: "simple-fill",
+						color: [50,100,255,.5],
+						outline: {
+						width: 2,
+						color: [125, 125, 255],
+						},
+						size: "20px"
+					},
+					});
+					graphicsLayer.add(g);
+				});
+			}
+			// Layer used to draw graphics returned--
+
+			// Utility functions --------------------
+			function getTaxlotInfo(graphic){
+				var attributes, content;
+				// console.log("graphic.geometry " + graphic.geometry);
+				attributes = graphic.attributes;
+                    
+                    // Account Info ----------------------
+					content = ""; //"<hr />";
+					content += "" + formatMaplot(graphic); 
+					content += "<br /> Acreage: " + attributes.ACREAGE 
+					content += "<br /> Tax Code: " + attributes.TAXCODE 			
+					content += "<br />Site Address: " + attributes.SITEADD;
+					content += "<br />Mailing Owner: " + attributes.FEEOWNER; 
+					// Account Info -----------------
+                    
+                    // Asmt & Plan Details button ---
+					content += "<hr />";
+                    var jsAcct = loadTextFrameAcct(attributes.ACCOUNT);
+                    content += "" + "<a target='_blank' href='" + jsAcct + "'> Assessment &amp; Planning Details</a>";
+                    // Asmt & Plan Details button ---
+
+					// Account Details button -------
+					var details = 'Ora_asmt_details.cfm?account=' + attributes.ACCOUNT;
+                    // NO PDO!
+                    details = baseUrl + details;
+                    content += "<br />" + "<a target='_blank' href=" +	details + "> Account Details</a>";
+                    // NO PDO!
+                    // Account Details button -------	
+                    
+					// Assessor Map button ----------
+					content += "<br />" + "<a target='_blank' href='" +
+				    getAsmtMap(attributes.MAPNUM) + "'> Assessor Map</a>";
+                    // Assessor Map button ----------
+                    
+					// Bing Maps buton --------------
+					var bMapUri = getBingMap();
+					content += "<br />" + "<a target='_blank' href='" +
+				    bMapUri + "'></span>Bing Maps</a>";
+                    // Bing Maps buton --------------
+                    
+					// Google Maps button -----------
+					var gMapUri = getGoogleMap();
+					content += "<br />" + "<a target='_blank' href='" +
+						gMapUri + "'></span>Google Maps</a>";
+                    // Google Maps button -----------	
+                    
+				return content;
+			}
+
+			function getAsmtMap(mapnum){
+				var url = getAsmtMapUrl;
+				var suff = getAsmtMapSuffix;
+				var content;
+				content = url + mapnum + suff;
+				return content;
+			}
+				
+			function queryFeatureLayer(point, distance, spatialRelationship, sqlExpression) {
+				var query = {
+					geometry: point,
+					distance: distance,
+					spatialRelationship: spatialRelationship,
+					outFields: ["*"],
+					returnGeometry: true,
+					where: sqlExpression
+				};
+				featureLayer.queryFeatures(query).then(function(result) {
+					addGraphics(result, true);
+				});
+			}
+
+			function formatTaxlot(feature){
+				var graphic, attributes, content;
+				graphic = feature.graphic;
+				attributes = graphic.attributes;
+				content =  "Taxlot - " + attributes.MAPNUMBER.toString() + " - " + attributes.TAXLOT.toString();
+				return content;
+			}
+
+			function formatMaplot(graphic){
+				var attributes, content;
+				attributes = graphic.attributes;
+				content =  "Taxlot - " + attributes.MAPNUMBER.toString() + " - " + attributes.TAXLOT.toString();
+				return content;
+			}
+
+			function formatTaxlotAcct(graphic){
+				var attributes, content;
+				attributes = graphic.attributes;
+				content =  "Account - " + attributes.ACCOUNT.toString();
+				return content;
+			}
+					
+			function getGoogleMap(){
+				var url = "";
+				var level = getGoogleMapZoom;
+				var latitude = view.center.latitude;
+				var longitude = view.center.longitude;
+				var baseUri = getGoogleMapUrl;
+				var suff = getGoogleMapSuffix;
+				url = baseUri + latitude + "," + longitude + "," + level + suff;
+				return url;
+			}
+				
+			function getBingMap(){
+				var url = "";
+				var level = getBingMapZoom;
+				var latitude = view.center.latitude;
+				var longitude = view.center.longitude;
+				var baseUri = getBingMapUrl;
+				var where = getBingMapWhere + latitude + "+" + longitude;
+				var suff = getBingMapSuffix;
+				url = baseUri + latitude + "~" + longitude + level + where + suff;
+				return url;        
+			}
+
+			function getZillow(graphic, address){ 
+				var url = "";
+				var baseUri = getZillowUrl;  // "https://www.zillow.com/homes/";
+				var suffix = getZillowSuffix;
+				if(address === null || address === "undefined" ){address = "No Address Available";}
+				url =  address.replace(/\s+/g, "-");
+				// console.log("address.replace -" + address.replace(/\s+/g, "-"));
+				// Create identify task for the specified map service
+				const identifyTask = new IdentifyTask(identifyTaskUrl); 
+
+				// Set the parameters for the Identify
+				const params = new IdentifyParameters();
+				params.geometry =  graphic.geometry;
+				params.tolerance = 3;
+				params.layerIds = [13];
+				params.layerOption = "all"; // top, visible, all
+				params.width = view.width;
+				params.height = view.height;
+				params.mapExtent = view.extent;
+				params.spatialReference = new SpatialReference({ wkid: 102100 });
+			
+				var feature, content;
+				var identify = identifyTask.execute(params).then(function (response) {
+					const results = response.results;
+					// process the results....
+					// console.log("results - " + results );					
+					var map =  results.map(function(result) {
+						feature = result.feature;
+						var layerName = result.layerName;
+						// console.log("feature.attributes - " + feature.attributes.ZIP );
+						url += getZillowState + "-" + feature.attributes.ZIP;
+						baseUri += url + suffix;
+						content = "<br />" + "<a target='_blank' href='" +
+							baseUri + "'> Zillow</a>";
+						return content;
+					});
+					return map;
+				});        
+				return identify;
+			}
+				
+			queryFeatureLayerAccount = function(mapnum, taxlot) {
+				var sqlExpression = " MAPNUM = '"+ mapnum + "' AND TAXLOT = '" +  taxlot + "'";
+				const query = new Query();
+				query.where = sqlExpression;
+				query.returnGeometry = true;
+				query.outSpatialReference = view.spatialReference;
+				// Queries for the count of all features matching the layer's configurations
+				// e.g. definitionExpression
+				featureLayer.queryFeatureCount(query).then(function(numFeatures){
+					// prints the total count to the console
+					console.log(numFeatures);
+				});
+				featureLayer.queryFeatures(query).then(function(result) {
+					addGraphics(result, true);
+					var selLocation = result.features[0].geometry;
+					view.goTo(selLocation).then(function() {        
+					}).catch(function(error) {
+					console.error("query failed: ", error);
+					});      
+				});
+			}
+			// Utility functions --------------------
+				
+			view.when(function() {
+        // Taxlots ----------------------------
+				featureLayer.minScale = 30000;
+        featureLayer.title = "Taxlots";
+				map.add(featureLayer, 0);
+        // Taxlots ----------------------------
+        
+        // Taxlot lables -----------------------
+        map.add(featureLayerTaxlotLbl, 0);
+        featureLayerTaxlotLbl.title = "Taxlot Labels";
+        featureLayerTaxlotLbl.minScale = 3000;
+        featureLayerTaxlotLbl.visible = false;
+        // Taxlot lables -----------------------
+        
+        // Site Address -----------------------
+        featureLayerSiteAddress.minScale = 10000;
+				featureLayerSiteAddress.visible  = false;
+				featureLayerSiteAddress.title = "Site Address";
+        map.add(featureLayerSiteAddress,0);
+        // Site Address -----------------------
+        				
+				// County -----------------------------
+				featureLayerCounty.title = "County";
+        map.add(featureLayerCounty, 0);
+				// County -----------------------------
+				
+				map.add(graphicsLayer);
+        
+				// console.log("window.parent.location.search: "+ window.parent.location.search);
+				// console.log("mapParam: " + mapParam + " taxlotParam: "  + taxlotParam);
+				if(mapParam && taxlotParam){
+					queryFeatureLayerAccount(mapParam, taxlotParam);
+					loadTextFrame(mapParam, taxlotParam)
+				}
+				var popup = view.popup;
+				popup.viewModel.on("trigger-action", function(event) {
+					// console.log("event.action.id = " + event.action.id);
+					// console.log("location.origin + location.pathname = " + location.origin + location.pathname.replace("/MapFrame.cfm", ""));
+					if (event.action.id === popupIdShare) {
+						var urlShare = location.origin + location.pathname.replace("/index.html", "") + "/share.htm";
+						var attributes = view.popup.viewModel.selectedFeature.attributes;
+						urlShare += "?map=" +  attributes.MAPNUM + "&taxlot=" + attributes.TAXLOT 
+						// console.log("attributes.TAXLOT = " + attributes.TAXLOT);						
+						window.open(urlShare.trim());
+					}
+          if (event.action.id === popupIdScreenShot) {
+               
+            // Take a high resolution, square screenshot
+            var options = {
+              width: 2048,
+              height: 2048
+            };
+            view.takeScreenshot(options).then(function(screenshot) {
+              var attributes = view.popup.viewModel.selectedFeature.attributes;
+              var taxlotInfo = attributes.MAPNUM + "-" + attributes.TAXLOT;
+              document.getElementById("textInput").value = taxlotInfo;
+              var imageElement = document.getElementById("screenshotImage");
+              //imageElement.src = screenshot.dataUrl;
+              //console.log(screenshot.dataUrl);
+              showPreview(screenshot);
+              // create the image for download
+              document.getElementById("downloadBtn").onclick = function() {
+                const text = document.getElementById("textInput").value;
+                // if a text exists, then add it to the image
+                if (text) {
+                  const dataUrl = getImageWithText(screenshot, text);
+                  downloadImage(
+                    taxlotInfo + ".png",
+                    dataUrl
+                  );
+                }
+                // otherwise download only the webscene screenshot
+                else {
+                  downloadImage(
+                    taxlotInfo + ".png",
+                    screenshot.dataUrl
+                  );
+                }
+              };
+            });            
+          }
+				});
+			});
+
+			// View click event ---------------------
+			view.on("click", function(event){
+				graphicsLayer.removeAll();
+				// event is the event handle returned after the event fires.
+				// console.log(event.mapPoint);
+			});
+			// View click event ---------------------
+
+      searchWidget.viewModel.on("select-result", function(event){
+        //console.log("The selected search result: ", event.result.feature.attributes.SITEADD);
+        loadPopup(event.result.feature);
+      });
+      
+			// Popup selected event -----------------
+			view.popup.watch("selectedFeature ",function (graphic){
+        loadPopup(graphic);
+			});
+			// Popup selected event -----------------
+
+      // Popup function -----------------------
+      function loadPopup(graphic){
+        if(graphic != null){
+					//console.log("stats++   = " + graphic.attributes.MAPNUM + " - " + graphic.attributes.TAXLOT);					
+					getZillow(graphic, graphic.attributes.SITEADD).then(function(response){
+						// console.log("response popup watch " + response);
+						var content = getTaxlotInfo(graphic) + response;
+						graphic.popupTemplate = {
+							// autocasts as new PopupTemplate()
+							title: formatTaxlotAcct(graphic),
+							content: content,
+							actions: [
+							{
+								id: popupIdShare,
+								title: "Share this map view." 
+							},
+							{
+								id: popupIdScreenShot,
+								title: "ScreenShot this map view." 
+							}  
+							]
+						};
+						return graphic;
+					}).then(showPopup); // Send the array of features to showPopup()					
+					// Shows the results of the Identify in a popup once the promise is resolved
+					function showPopup(response) {									
+						// console.log("done: ");
+						if (response.length > 0) {
+							view.popup.open({
+							features: response,
+							location: event.mapPoint
+							});
+						}
+						document.getElementById("viewDiv").style.cursor = "auto";
+					};
+					loadTextFrame(graphic.attributes.MAPNUM, graphic.attributes.TAXLOT);
+					//console.log("stats++   = " + graphic.attributes.MAPNUM + " - " + graphic.attributes.TAXLOT);
+				}        
+      }      
+      // Popup function -----------------------      
+      
+			// Loads info window on PDO Cold Fusion--
+			view.popup.watch("visible", function (graphic){
+				// console.log("visible = " + view.popup.visible);
+				if(!view.popup.visible){
+					loadTextFrameUrl("search.cfm");
+				}
+			});
+			// Loads info window on PDO Cold Fusion--
+      // creates an image that will be appended to the DOM
+      // so that users can have a preview of what they will download
+      function showPreview(screenshot) {
+        screenshotDiv.classList.remove("hide");
+        // add the screenshot dataUrl as the src of an image element
+        const screenshotImage = document.getElementsByClassName(
+          "js-screenshot-image"
+        )[0];
+        screenshotImage.width = screenshot.data.width / 4;
+        screenshotImage.height = screenshot.data.height / 4;
+        screenshotImage.src = screenshot.dataUrl;
+        // button to hide the print preview html element
+        //downloadImage("filename", screenshot.dataUrl);
+        document
+          .getElementById("closeBtn")
+          .addEventListener("click", function() {
+            screenshotDiv.classList.add("hide");
+          });
+        }
+      function hidePreview() {
+        screenshotDiv.classList.add("hide");
+      }
+      function downloadImage(filename, dataUrl) {
+        // the download is handled differently in Microsoft browsers
+        // because the download attribute for <a> elements is not supported
+        if (!window.navigator.msSaveOrOpenBlob) {
+          // in browsers that support the download attribute
+          // a link is created and a programmatic click will trigger the download
+          const element = document.createElement("a");
+          element.setAttribute("href", dataUrl);
+          element.setAttribute("download", filename);
+          element.style.display = "none";
+          document.body.appendChild(element);
+          element.click();
+          document.body.removeChild(element);
+        } else {
+          // for MS browsers convert dataUrl to Blob
+          const byteString = atob(dataUrl.split(",")[1]);
+          const mimeString = dataUrl
+          .split(",")[0]
+          .split(":")[1]
+          .split(";")[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+
+          // download file
+          window.navigator.msSaveOrOpenBlob(blob, filename);
+        }
+      }
+      // returns a new image created by adding a custom text to the webscene image
+      function getImageWithText(screenshot, text) {
+        const imageData = screenshot.data;
+
+        // to add the text to the screenshot we create a new canvas element
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.height = imageData.height;
+        canvas.width = imageData.width;
+
+        // add the screenshot data to the canvas
+        context.putImageData(imageData, 0, 0);
+        context.font = "40px Arial";
+        context.fillStyle = "#000";
+        context.fillRect(
+          0,
+          imageData.height - 40,
+          context.measureText(text).width + 20,
+          30
+        );
+
+        // add the text from the textInput element
+        context.fillStyle = "#fff";
+        context.fillText(text, 10, imageData.height - 10);
+
+        return canvas.toDataURL();
+      }
+		}); // End of initial require func --------------
+    
+    // Functions outside require --------------------
+		function loadTextFrame(map, taxlot){
+			var url = "Ora_query.cfm?bByPassCache=True&IDValue=" 
+				+ map + "&DisplayValue=" + taxlot;
+			// PDO
+      //txtFrm.document.location = url.trim();
+      // NO PDO
+      //window.open(baseUrl + url.trim()); 
+		}
+		function loadTextFrameAcct(account){
+			var url = "Ora_account.cfm?account=" + account;
+      // PDO
+			//txtFrm.document.location = url.trim();
+      // NO PDO
+      return baseUrl + url.trim() 
+		}
+		function loadTextFrameUrl(url){
+      // PDO
+			//txtFrm.document.location = url;
+      // NO PDO
+      //window.open(baseUrl + url.trim()); 
+		}
+
+		// Functions outside require --------------------
+    
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+    <div id="screenshotDiv" class="hide">
+      <img class="js-screenshot-image" />
+      <div>
+        <label>Set a text to be displayed on the image: </label
+        ><input type="text" placeholder="Image text" id="textInput" autofocus />
+      </div>
+      <button
+        id="downloadBtn"
+        class="action-button"
+        aria-label="Download image"
+        title="Download image"
+      >
+        Download image
+      </button>
+      <button
+        id="closeBtn"
+        class="action-button"
+        aria-label="Back to map"
+        title="Back to map"
+      >
+        Back to map
+      </button>
+    </div>
+</body>
+
+</html>
