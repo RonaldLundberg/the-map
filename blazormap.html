@@ -80,7 +80,7 @@
       var getZillowSuffix = "_rb";
       var getZillowState = ",-OR,";
 
-      var thisFileName = "/MapFrame.cfm";
+      var thisFileName = "/blazormap.html";
       var shareFileName = "/share.htm";
 
       var shareIcon =
@@ -916,8 +916,7 @@
             if (event.action.id === popupIdShare) {
               var urlShare =
                 location.origin +
-                location.pathname.replace("/blazormap.html", "") +
-                "/share.htm";
+                location.pathname.replace(thisFileName, shareFileName);
               var attributes = view.popup.viewModel.selectedFeature.attributes;
               urlShare +=
                 "?map=" + attributes.MAPNUM + "&taxlot=" + attributes.TAXLOT;
